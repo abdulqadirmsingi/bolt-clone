@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:latlong2/latlong.dart';
 
 import 'map_controller.dart';
 import 'map_state.dart';
 
-/// Map-first design: single [GoogleMap] instance, marker/polyline updates via state.
+/// Map-first design: single [FlutterMap] (OpenStreetMap), no API key or billing.
 ///
-/// No location smoothing in this widget—state is smoothed in core/location (data layer).
-/// Marker and polyline sets are updated without recreating the map.
+/// Marker/polyline updates via state. No location smoothing in this widget—
+/// state is smoothed in core/location (data layer).
 const double _defaultZoom = 15.0;
 
 class MapPage extends StatefulWidget {
@@ -29,11 +30,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  GoogleMapController? _mapController;
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
-  static const _driverMarkerId = MarkerId('driver');
-  static const _routePolylineId = PolylineId('route');
+  final fm.MapController _flutterMapController = fm.MapController();
 
   @override
   void initState() {
@@ -58,68 +55,70 @@ class _MapPageState extends State<MapPage> {
 
   void _onStateChanged(MapState state) {
     if (!mounted) return;
-    setState(() {
-      _updateMarkers(state);
-      _updatePolylines(state);
-    });
+    setState(() {});
   }
 
-  void _updateMarkers(MapState state) {
-    _markers.clear();
+  LatLng _initialCenter(MapState state) {
+    final center = widget.initialCenter ??
+        (state.driverPosition != null
+            ? (lat: state.driverPosition!.lat, lng: state.driverPosition!.lng)
+            : (lat: 59.3293, lng: 18.0686));
+    return LatLng(center.lat, center.lng);
+  }
+
+  List<fm.Marker> _buildMarkers(MapState state, BuildContext context) {
+    final markers = <fm.Marker>[];
     if (state.myLocation != null) {
-      _markers.add(
-        Marker(
-          markerId: const MarkerId('me'),
-          position: LatLng(state.myLocation!.lat, state.myLocation!.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      markers.add(
+        fm.Marker(
+          point: LatLng(state.myLocation!.lat, state.myLocation!.lng),
+          width: 32,
+          height: 32,
+          child: Icon(
+            Icons.person_pin_circle,
+            color: Theme.of(context).colorScheme.primary,
+            size: 32,
+          ),
         ),
       );
     }
     if (state.driverPosition != null) {
       final p = state.driverPosition!;
-      _markers.add(
-        Marker(
-          markerId: _driverMarkerId,
-          position: LatLng(p.lat, p.lng),
-          rotation: p.headingDegrees,
-          flat: true,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      markers.add(
+        fm.Marker(
+          point: LatLng(p.lat, p.lng),
+          width: 40,
+          height: 40,
+          child: Transform.rotate(
+            angle: p.headingDegrees * 3.141592 / 180,
+            child: Icon(
+              Icons.navigation,
+              color: Colors.green.shade700,
+              size: 40,
+            ),
+          ),
         ),
       );
     }
+    return markers;
   }
 
-  void _updatePolylines(MapState state) {
-    _polylines.clear();
+  List<fm.Polyline> _buildPolylines(MapState state, BuildContext context) {
     final points = state.routePoints;
-    if (points != null && points.length >= 2) {
-      _polylines.add(
-        Polyline(
-          polylineId: _routePolylineId,
-          points: points.map((e) => LatLng(e.lat, e.lng)).toList(),
-          color: Theme.of(context).colorScheme.primary,
-          width: 5,
-        ),
-      );
-    }
+    if (points == null || points.length < 2) return [];
+    return [
+      fm.Polyline(
+        points: points.map((e) => LatLng(e.lat, e.lng)).toList(),
+        color: Theme.of(context).colorScheme.primary,
+        strokeWidth: 5,
+      ),
+    ];
   }
 
   @override
   void dispose() {
     widget.mapController.onStateChanged = null;
-    _mapController?.dispose();
     super.dispose();
-  }
-
-  CameraPosition _initialCamera(MapState state) {
-    final center = widget.initialCenter ??
-        (state.driverPosition != null
-            ? (lat: state.driverPosition!.lat, lng: state.driverPosition!.lng)
-            : (lat: 59.3293, lng: 18.0686)); // Stockholm default
-    return CameraPosition(
-      target: LatLng(center.lat, center.lng),
-      zoom: _defaultZoom,
-    );
   }
 
   @override
@@ -128,17 +127,20 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: _initialCamera(state),
-            markers: _markers,
-            polylines: _polylines,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-            onMapCreated: (c) {
-              _mapController = c;
-            },
+          fm.FlutterMap(
+            mapController: _flutterMapController,
+            options: fm.MapOptions(
+              initialCenter: _initialCenter(state),
+              initialZoom: _defaultZoom,
+            ),
+            children: [
+              fm.TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.mobility_app',
+              ),
+              fm.MarkerLayer(markers: _buildMarkers(state, context)),
+              fm.PolylineLayer(polylines: _buildPolylines(state, context)),
+            ],
           ),
           SafeArea(
             child: Align(
@@ -148,10 +150,8 @@ class _MapPageState extends State<MapPage> {
                 child: _MapActions(
                   onCenterDriver: () {
                     final p = state.driverPosition;
-                    if (p != null && _mapController != null) {
-                      _mapController!.animateCamera(
-                        CameraUpdate.newLatLng(LatLng(p.lat, p.lng)),
-                      );
+                    if (p != null) {
+                      _flutterMapController.move(LatLng(p.lat, p.lng), _defaultZoom);
                     }
                   },
                 ),
