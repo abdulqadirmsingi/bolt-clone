@@ -1,0 +1,29 @@
+env: prod
+
+grpc:
+  port: 50051
+
+http:
+  port: 8080
+
+postgres:
+  dsn: "${POSTGRES_DSN}"
+
+redis:
+  addr: "${REDIS_ADDR}"
+  password: "${REDIS_PASSWORD}"
+  db: 0
+
+fireball:
+  min_distance_meters: 25
+  min_heading_degrees: 15
+  max_silence_seconds: 20
+  throttle_ms: 1000
+
+h3:
+  resolution: 9
+  default_k_ring: 2
+
+jwt:
+  secret: "${JWT_SECRET}"
+  expire_mins: 1440

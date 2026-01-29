@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package mobility.v1;
+
+option go_package = "github.com/zeng/mobility-backend/internal/proto/gen;gen";
+
+// Trip service: trip lifecycle and multi-stop routing.
+service TripService {
+  rpc CreateTrip(CreateTripRequest) returns (CreateTripResponse);
+  rpc GetTrip(GetTripRequest) returns (GetTripResponse);
+  rpc StreamTripUpdates(StreamTripUpdatesRequest) returns (stream TripUpdate);
+}
+
+message CreateTripRequest {
+  string rider_id = 1;
+  repeated Stop stops = 2;  // pickup, dropoff; multi-stop supported
+}
+
+message Stop {
+  double lat = 1;
+  double lng = 2;
+  string label = 3;   // e.g. "Pickup", "Dropoff 1"
+  int32 sequence = 4;
+}
+
+message CreateTripResponse {
+  string trip_id = 1;
+  string driver_id = 2;
+  repeated Stop ordered_stops = 3;
+  int32 eta_seconds = 4;
+}
+
+message GetTripRequest {
+  string trip_id = 1;
+}
+
+message GetTripResponse {
+  string trip_id = 1;
+  string status = 2;  // requested, accepted, in_progress, completed, cancelled
+  string driver_id = 3;
+  repeated Stop ordered_stops = 4;
+  int32 current_stop_index = 5;
+  int32 eta_seconds = 6;
+}
+
+message StreamTripUpdatesRequest {
+  string trip_id = 1;
+}
+
+message TripUpdate {
+  string trip_id = 1;
+  string status = 2;
+  int32 current_stop_index = 3;
+  repeated Stop ordered_stops = 4;  // may change on reorder
+  int32 eta_seconds = 5;
+  int64 updated_at_ms = 6;
+}

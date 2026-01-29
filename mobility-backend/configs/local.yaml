@@ -1,0 +1,29 @@
+env: local
+
+grpc:
+  port: 50051
+
+http:
+  port: 8080
+
+postgres:
+  dsn: "postgres://postgres:postgres@localhost:5432/mobility?sslmode=disable"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+
+fireball:
+  min_distance_meters: 15
+  min_heading_degrees: 10
+  max_silence_seconds: 30
+  throttle_ms: 2000
+
+h3:
+  resolution: 9
+  default_k_ring: 2
+
+jwt:
+  secret: "change-me-in-production"
+  expire_mins: 1440

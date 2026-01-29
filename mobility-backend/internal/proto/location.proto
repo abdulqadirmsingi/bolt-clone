@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package mobility.v1;
+
+option go_package = "github.com/zeng/mobility-backend/internal/proto/gen;gen";
+
+// Location service: streaming driver locations (push-based, no polling).
+service LocationService {
+  // Driver streams his GPS; server applies Fireball and pushes significant updates.
+  rpc StreamDriverLocation(stream DriverLocationRequest) returns (stream DriverLocationAck);
+
+  // Rider subscribes to a driver's location for active trip (one persistent stream).
+  rpc SubscribeDriverLocation(SubscribeDriverLocationRequest) returns (stream DriverLocationUpdate);
+}
+
+message DriverLocationRequest {
+  string driver_id = 1;
+  double lat = 2;
+  double lng = 3;
+  double heading_degrees = 4;  // 0-360
+  int64 client_timestamp_ms = 5;
+}
+
+message DriverLocationAck {
+  bool accepted = 1;  // true if pushed to subscribers
+  int64 server_timestamp_ms = 2;
+}
+
+message SubscribeDriverLocationRequest {
+  string trip_id = 1;
+  string driver_id = 2;
+}
+
+message DriverLocationUpdate {
+  string driver_id = 1;
+  double lat = 2;
+  double lng = 3;
+  double heading_degrees = 4;
+  int64 updated_at_ms = 5;
+}

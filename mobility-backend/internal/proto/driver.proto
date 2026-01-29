@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package mobility.v1;
+
+option go_package = "github.com/zeng/mobility-backend/internal/proto/gen;gen";
+
+// Driver service: nearby drivers (H3-based), driver state.
+service DriverService {
+  rpc GetNearbyDrivers(GetNearbyDriversRequest) returns (GetNearbyDriversResponse);
+}
+
+message GetNearbyDriversRequest {
+  double lat = 1;
+  double lng = 2;
+  int32 k_ring = 3;  // optional; 0 = use default
+}
+
+message DriverSummary {
+  string driver_id = 1;
+  double lat = 2;
+  double lng = 3;
+  double heading_degrees = 4;
+  int64 updated_at_ms = 5;
+}
+
+message GetNearbyDriversResponse {
+  repeated DriverSummary drivers = 1;
+}
