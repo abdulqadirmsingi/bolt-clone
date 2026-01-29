@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Mobility needs your location to show your position on the map and to share it when you go online as a driver.</string>
 </dict>
 </plist>

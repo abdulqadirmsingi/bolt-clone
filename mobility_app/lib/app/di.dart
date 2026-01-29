@@ -1,7 +1,11 @@
+import '../features/driver/data/driver_availability_api_noop.dart';
+import '../features/driver/data/driver_location_sender.dart';
+import '../features/driver/data/driver_location_streamer.dart';
 import '../features/driver/data/driver_repository_impl.dart';
 import '../features/driver/data/driver_stream_ds.dart';
 import '../features/driver/domain/get_smoothed_driver_location.dart';
 import '../features/driver/domain/driver_repository.dart';
+import '../features/driver/presentation/driver_mode_controller.dart';
 import '../features/map/domain/map_use_case.dart';
 import '../features/map/presentation/map_controller.dart';
 
@@ -16,9 +20,29 @@ class AppContainer {
   static GetSmoothedDriverLocation? _getSmoothedDriverLocation;
   static ObserveDriverOnMap? _observeDriverOnMap;
   static MapController? _mapController;
+  static DriverModeController? _driverModeController;
+  static DriverLocationStreamer? _driverLocationStreamer;
+
+  static DriverLocationSender get driverLocationSender =>
+      DriverLocationSenderNoop();
+
+  static DriverLocationStreamer get driverLocationStreamer {
+    _driverLocationStreamer ??= DriverLocationStreamer(
+      driverModeController: driverModeController,
+      sender: driverLocationSender,
+    );
+    return _driverLocationStreamer!;
+  }
 
   static void registerDriverStreamDataSource(DriverStreamDataSource ds) {
     _driverStreamDs = ds;
+  }
+
+  static DriverModeController get driverModeController {
+    _driverModeController ??= DriverModeController(
+      api: DriverAvailabilityApiNoop(),
+    );
+    return _driverModeController!;
   }
 
   static DriverRepository get driverRepository {
@@ -50,6 +74,10 @@ class AppContainer {
     _observeDriverOnMap = null;
     _mapController?.dispose();
     _mapController = null;
+    _driverModeController?.dispose();
+    _driverModeController = null;
+    _driverLocationStreamer?.dispose();
+    _driverLocationStreamer = null;
   }
 }
 

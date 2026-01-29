@@ -12,6 +12,8 @@ import (
 type DriverServiceClient interface {
 	GetNearbyDrivers(ctx context.Context, in *GetNearbyDriversRequest, opts ...grpc.CallOption) (*GetNearbyDriversResponse, error)
 	StreamDriverAvailability(ctx context.Context, in *StreamDriverAvailabilityRequest, opts ...grpc.CallOption) (DriverService_StreamDriverAvailabilityClient, error)
+	SetAvailability(ctx context.Context, in *SetAvailabilityRequest, opts ...grpc.CallOption) (*SetAvailabilityResponse, error)
+	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 }
 
 type driverServiceClient struct {
@@ -46,6 +48,24 @@ func (c *driverServiceClient) StreamDriverAvailability(ctx context.Context, in *
 	return x, nil
 }
 
+func (c *driverServiceClient) SetAvailability(ctx context.Context, in *SetAvailabilityRequest, opts ...grpc.CallOption) (*SetAvailabilityResponse, error) {
+	out := new(SetAvailabilityResponse)
+	err := c.cc.Invoke(ctx, "/mobility.v1.DriverService/SetAvailability", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *driverServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
+	out := new(HeartbeatResponse)
+	err := c.cc.Invoke(ctx, "/mobility.v1.DriverService/Heartbeat", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 type DriverService_StreamDriverAvailabilityClient interface {
 	Recv() (*DriverAvailabilityUpdate, error)
 	grpc.ClientStream
@@ -67,6 +87,8 @@ func (x *driverServiceStreamDriverAvailabilityClient) Recv() (*DriverAvailabilit
 type DriverServiceServer interface {
 	GetNearbyDrivers(context.Context, *GetNearbyDriversRequest) (*GetNearbyDriversResponse, error)
 	StreamDriverAvailability(*StreamDriverAvailabilityRequest, DriverService_StreamDriverAvailabilityServer) error
+	SetAvailability(context.Context, *SetAvailabilityRequest) (*SetAvailabilityResponse, error)
+	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 }
 
 type UnimplementedDriverServiceServer struct{}
@@ -76,6 +98,12 @@ func (UnimplementedDriverServiceServer) GetNearbyDrivers(context.Context, *GetNe
 }
 func (UnimplementedDriverServiceServer) StreamDriverAvailability(*StreamDriverAvailabilityRequest, DriverService_StreamDriverAvailabilityServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamDriverAvailability not implemented")
+}
+func (UnimplementedDriverServiceServer) SetAvailability(context.Context, *SetAvailabilityRequest) (*SetAvailabilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAvailability not implemented")
+}
+func (UnimplementedDriverServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Heartbeat not implemented")
 }
 
 type DriverService_StreamDriverAvailabilityServer interface {
@@ -102,6 +130,14 @@ var DriverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNearbyDrivers",
 			Handler:    _DriverService_GetNearbyDrivers_Handler,
+		},
+		{
+			MethodName: "SetAvailability",
+			Handler:    _DriverService_SetAvailability_Handler,
+		},
+		{
+			MethodName: "Heartbeat",
+			Handler:    _DriverService_Heartbeat_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -135,4 +171,34 @@ func _DriverService_StreamDriverAvailability_Handler(srv interface{}, stream grp
 		return err
 	}
 	return srv.(DriverServiceServer).StreamDriverAvailability(m, &driverServiceStreamDriverAvailabilityServer{stream})
+}
+
+func _DriverService_SetAvailability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAvailabilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).SetAvailability(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: "/mobility.v1.DriverService/SetAvailability"}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).SetAvailability(ctx, req.(*SetAvailabilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DriverService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverServiceServer).Heartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: "/mobility.v1.DriverService/Heartbeat"}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverServiceServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }

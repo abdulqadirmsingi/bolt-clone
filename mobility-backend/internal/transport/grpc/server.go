@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/zeng/mobility-backend/internal/domain/driver"
 	"github.com/zeng/mobility-backend/internal/domain/fireball"
 	"github.com/zeng/mobility-backend/internal/domain/location"
 	"github.com/zeng/mobility-backend/internal/domain/trip"
@@ -33,6 +34,7 @@ func NewServer(
 	fireballSvc *fireball.Service,
 	pub fireball.LocationPublisher,
 	tripSvc *trip.Service,
+	availSvc *driver.AvailabilityService,
 ) *Server {
 	srv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -47,7 +49,7 @@ func NewServer(
 	)
 	locHandler := handlers.NewLocationHandler(locSvc, fireballSvc, pub)
 	gen.RegisterLocationServiceServer(srv, locHandler)
-	gen.RegisterDriverServiceServer(srv, handlers.NewDriverHandler(locSvc))
+	gen.RegisterDriverServiceServer(srv, handlers.NewDriverHandler(locSvc, availSvc))
 	gen.RegisterTripServiceServer(srv, handlers.NewTripHandler(tripSvc))
 	reflection.Register(srv)
 	return &Server{Server: srv, log: log}

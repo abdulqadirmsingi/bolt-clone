@@ -2,8 +2,6 @@ package location
 
 import (
 	"context"
-
-	"github.com/uber/h3-go/v4"
 )
 
 // GeoRepository abstracts Redis/DB for driver locations and H3 index lookups.

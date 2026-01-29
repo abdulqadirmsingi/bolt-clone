@@ -20,6 +20,9 @@ class MapState {
   final String? stopLabel;
   final ({double lat, double lng})? myLocation;
 
+  /// Whether to use my location as initial map center (when no driver/trip).
+  bool get hasMyLocation => myLocation != null;
+
   MapState copyWith({
     SmoothedDriverPosition? driverPosition,
     List<({double lat, double lng})>? routePoints,

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"io"
 	"time"
 

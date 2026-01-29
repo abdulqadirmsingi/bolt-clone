@@ -27,3 +27,7 @@ h3:
 jwt:
   secret: "${JWT_SECRET}"
   expire_mins: 1440
+
+driver:
+  heartbeat_interval_seconds: 15
+  heartbeat_timeout_seconds: 45

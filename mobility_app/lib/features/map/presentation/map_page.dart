@@ -1,26 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart';
 
+import '../../driver/domain/driver_status.dart';
+import '../../driver/presentation/driver_mode_controller.dart';
+import '../domain/my_location_stream.dart';
 import 'map_controller.dart';
 import 'map_state.dart';
 
 /// Map-first design: single [FlutterMap] (OpenStreetMap), no API key or billing.
 ///
-/// Marker/polyline updates via state. No location smoothing in this widget—
-/// state is smoothed in core/location (data layer).
+/// Marker/polyline updates via state. My location from geolocator; driver mode
+/// toggle controls Go Online/Offline (backend GPS stream only when ONLINE/ON_TRIP).
 const double _defaultZoom = 15.0;
 
 class MapPage extends StatefulWidget {
   const MapPage({
     super.key,
     required this.mapController,
+    required this.driverModeController,
     this.tripId,
     this.driverId,
     this.initialCenter,
   });
 
   final MapController mapController;
+  final DriverModeController driverModeController;
   final String? tripId;
   final String? driverId;
   final ({double lat, double lng})? initialCenter;
@@ -31,17 +38,37 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   final fm.MapController _flutterMapController = fm.MapController();
+  StreamSubscription<({double lat, double lng})>? _locationSubscription;
+  LatLng? _initialCenterOverride;
 
   @override
   void initState() {
     super.initState();
     widget.mapController.onStateChanged = _onStateChanged;
+    widget.driverModeController.statusStream.listen((_) {
+      if (mounted) setState(() {});
+    });
     if (widget.tripId != null && widget.driverId != null) {
       widget.mapController.startObservingDriver(
         widget.tripId!,
         widget.driverId!,
       );
     }
+    _initMyLocation();
+  }
+
+  Future<void> _initMyLocation() async {
+    final pos = await getCurrentPositionOnce();
+    if (pos != null && mounted) {
+      widget.mapController.updateMyLocation(pos.lat, pos.lng);
+      _initialCenterOverride = LatLng(pos.lat, pos.lng);
+      setState(() {});
+    }
+    _locationSubscription = createMyLocationStream().listen((pos) {
+      if (mounted) {
+        widget.mapController.updateMyLocation(pos.lat, pos.lng);
+      }
+    });
   }
 
   @override
@@ -59,10 +86,13 @@ class _MapPageState extends State<MapPage> {
   }
 
   LatLng _initialCenter(MapState state) {
+    if (_initialCenterOverride != null) return _initialCenterOverride!;
     final center = widget.initialCenter ??
-        (state.driverPosition != null
-            ? (lat: state.driverPosition!.lat, lng: state.driverPosition!.lng)
-            : (lat: 59.3293, lng: 18.0686));
+        (state.myLocation != null
+            ? state.myLocation!
+            : state.driverPosition != null
+                ? (lat: state.driverPosition!.lat, lng: state.driverPosition!.lng)
+                : (lat: 59.3293, lng: 18.0686));
     return LatLng(center.lat, center.lng);
   }
 
@@ -117,6 +147,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   void dispose() {
+    _locationSubscription?.cancel();
     widget.mapController.onStateChanged = null;
     super.dispose();
   }
@@ -143,19 +174,39 @@ class _MapPageState extends State<MapPage> {
             ],
           ),
           SafeArea(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8, right: 8),
-                child: _MapActions(
-                  onCenterDriver: () {
-                    final p = state.driverPosition;
-                    if (p != null) {
-                      _flutterMapController.move(LatLng(p.lat, p.lng), _defaultZoom);
-                    }
-                  },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 8),
+                    child: _DriverModeToggle(
+                      driverModeController: widget.driverModeController,
+                    ),
+                  ),
                 ),
-              ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8, right: 8),
+                    child: _MapActions(
+                      onCenterDriver: () {
+                        final p = state.driverPosition;
+                        if (p != null) {
+                          _flutterMapController.move(LatLng(p.lat, p.lng), _defaultZoom);
+                        }
+                      },
+                      onCenterMyLocation: () {
+                        final my = state.myLocation;
+                        if (my != null) {
+                          _flutterMapController.move(LatLng(my.lat, my.lng), _defaultZoom);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Align(
@@ -172,10 +223,63 @@ class _MapPageState extends State<MapPage> {
   }
 }
 
+class _DriverModeToggle extends StatelessWidget {
+  const _DriverModeToggle({required this.driverModeController});
+
+  final DriverModeController driverModeController;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isOnline = driverModeController.isOnline;
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isOnline ? Colors.green : theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              driverModeController.status.label,
+              style: theme.textTheme.labelLarge,
+            ),
+            const SizedBox(width: 12),
+            FilledButton.tonal(
+              onPressed: isOnline
+                  ? () => driverModeController.goOffline()
+                  : () => driverModeController.goOnline(),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                minimumSize: Size.zero,
+              ),
+              child: Text(isOnline ? 'Go Offline' : 'Go Online'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MapActions extends StatelessWidget {
-  const _MapActions({required this.onCenterDriver});
+  const _MapActions({
+    required this.onCenterDriver,
+    required this.onCenterMyLocation,
+  });
 
   final VoidCallback onCenterDriver;
+  final VoidCallback onCenterMyLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -183,9 +287,20 @@ class _MapActions extends StatelessWidget {
       color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(12),
       elevation: 2,
-      child: IconButton(
-        onPressed: onCenterDriver,
-        icon: const Icon(Icons.my_location),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: onCenterMyLocation,
+            icon: const Icon(Icons.person_pin_circle),
+            tooltip: 'Center on my location',
+          ),
+          IconButton(
+            onPressed: onCenterDriver,
+            icon: const Icon(Icons.navigation),
+            tooltip: 'Center on driver',
+          ),
+        ],
       ),
     );
   }

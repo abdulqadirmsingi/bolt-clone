@@ -20,6 +20,11 @@ class MapController {
 
   void Function(MapState)? onStateChanged;
 
+  void updateMyLocation(double lat, double lng) {
+    _state = _state.copyWith(myLocation: (lat: lat, lng: lng));
+    onStateChanged?.call(_state);
+  }
+
   void startObservingDriver(String tripId, String driverId) {
     _subscription?.cancel();
     _subscription = _observeDriverOnMap(tripId, driverId).listen((position) {

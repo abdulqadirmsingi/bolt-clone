@@ -1,5 +1,11 @@
 .PHONY: build run proto tidy test
 
+# Load .env if present so "make run" uses DB_* without exporting each time
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 build:
 	go build -o bin/server ./cmd/server
 

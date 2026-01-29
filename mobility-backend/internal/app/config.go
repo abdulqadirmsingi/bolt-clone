@@ -8,14 +8,22 @@ import (
 )
 
 type Config struct {
-	Env      string       `yaml:"env"`
-	GRPC     GRPCConfig   `yaml:"grpc"`
-	HTTP     HTTPConfig   `yaml:"http"`
-	Postgres PostgresConfig `yaml:"postgres"`
-	Redis    RedisConfig  `yaml:"redis"`
-	Fireball FireballConfig `yaml:"fireball"`
-	H3       H3Config     `yaml:"h3"`
-	JWT      JWTConfig    `yaml:"jwt"`
+	Env      string          `yaml:"env"`
+	GRPC     GRPCConfig      `yaml:"grpc"`
+	HTTP     HTTPConfig      `yaml:"http"`
+	Postgres PostgresConfig  `yaml:"postgres"`
+	Redis    RedisConfig     `yaml:"redis"`
+	Fireball FireballConfig  `yaml:"fireball"`
+	H3       H3Config        `yaml:"h3"`
+	JWT      JWTConfig       `yaml:"jwt"`
+	Driver   DriverConfig    `yaml:"driver"`
+}
+
+type DriverConfig struct {
+	// HeartbeatIntervalSeconds: driver should send heartbeat every N seconds
+	HeartbeatIntervalSeconds int `yaml:"heartbeat_interval_seconds"`
+	// HeartbeatTimeoutSeconds: if no heartbeat for this long, mark OFFLINE and remove from H3
+	HeartbeatTimeoutSeconds int `yaml:"heartbeat_timeout_seconds"`
 }
 
 type GRPCConfig struct {

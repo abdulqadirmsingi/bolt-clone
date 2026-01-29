@@ -1,0 +1,36 @@
+# Env and secrets (never commit)
+.env
+.env.local
+*.pem
+
+# Build and binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go
+*.test
+*.out
+vendor/
+
+# Cache and tools
+.cache/
+coverage.html
+coverage.txt
+
+# IDE and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+tmp/
+temp/

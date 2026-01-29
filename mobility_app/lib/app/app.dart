@@ -16,6 +16,7 @@ class MobilityApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: MapPage(
         mapController: AppContainer.mapController,
+        driverModeController: AppContainer.driverModeController,
         tripId: null,
         driverId: null,
       ),

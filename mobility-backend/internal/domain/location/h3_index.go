@@ -37,12 +37,14 @@ func NewH3Index(resolution, defaultK int) *H3Index {
 
 // LatLngToCell returns the H3 cell containing the given point at configured resolution.
 func (h *H3Index) LatLngToCell(lat, lng float64) (h3.Cell, error) {
-	return h3.LatLngToCell(h3.NewLatLng(lat, lng), h.resolution)
+	cell := h3.LatLngToCell(h3.NewLatLng(lat, lng), h.resolution)
+	return cell, nil
 }
 
 // CellToLatLng returns the center of the cell.
 func (h *H3Index) CellToLatLng(c h3.Cell) (h3.LatLng, error) {
-	return c.LatLng()
+	ll := c.LatLng()
+	return ll, nil
 }
 
 // GridDisk returns the cell and all cells within K steps (K-ring / grid disk).
@@ -52,7 +54,8 @@ func (h *H3Index) GridDisk(center h3.Cell, k int) ([]h3.Cell, error) {
 	if k < 0 {
 		k = h.defaultK
 	}
-	return center.GridDisk(k)
+	cells := center.GridDisk(k)
+	return cells, nil
 }
 
 // KRingStrings returns H3 index strings for Redis/PostgreSQL storage.

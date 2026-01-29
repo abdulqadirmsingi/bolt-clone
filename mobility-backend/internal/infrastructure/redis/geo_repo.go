@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/zeng/mobility-backend/internal/domain/location"
