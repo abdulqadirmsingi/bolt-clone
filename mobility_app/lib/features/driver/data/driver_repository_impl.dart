@@ -1,5 +1,6 @@
-import '../../domain/driver_entity.dart';
-import '../../domain/driver_repository.dart';
+import '../domain/driver_entity.dart';
+import '../domain/driver_repository.dart';
+import 'driver_stream_ds.dart';
 import '../../../core/location/location.dart';
 
 /// Applies location smoothing (core/location) to raw stream; exposes smoothed positions.
