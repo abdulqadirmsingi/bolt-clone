@@ -24,16 +24,19 @@ func NewService(threshold *Threshold, loc LocationUpdater, pub LocationPublisher
 }
 
 // OnDriverLocation is called for every incoming GPS sample (e.g. from gRPC stream).
-// It filters by threshold, then writes to Redis (via location service) and publishes to subscribers.
-func (s *Service) OnDriverLocation(ctx context.Context, driverID string, lat, lng, heading float64) error {
+// It filters by threshold; only when significant: writes Redis and publishes. Returns whether a push was emitted.
+func (s *Service) OnDriverLocation(ctx context.Context, driverID string, lat, lng, heading float64) (pushed bool, err error) {
 	updatedAt := time.Now().UnixMilli()
 
 	if !s.threshold.ShouldPush(driverID, lat, lng, heading, updatedAt) {
-		return nil // no push; bandwidth saved
+		return false, nil // no push; bandwidth saved
 	}
 
 	if err := s.loc.UpdateDriverLocation(ctx, driverID, lat, lng, heading, updatedAt); err != nil {
-		return err
+		return false, err
 	}
-	return s.pub.PublishDriverLocation(ctx, driverID, lat, lng, heading, updatedAt)
+	if err := s.pub.PublishDriverLocation(ctx, driverID, lat, lng, heading, updatedAt); err != nil {
+		return false, err
+	}
+	return true, nil
 }

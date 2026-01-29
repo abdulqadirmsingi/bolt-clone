@@ -29,7 +29,7 @@ class DriverRepositoryImpl implements DriverRepository {
         lng: smoothed.lng,
         headingDegrees: raw.headingDegrees,
         updatedAtMs: raw.updatedAtMs,
-        isPredicted: false,
+        isPredicted: smoother.isCurrentPredicted,
       );
     }
   }

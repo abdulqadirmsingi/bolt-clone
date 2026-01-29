@@ -38,6 +38,11 @@ func (r *GeoRepo) UpsertDriver(ctx context.Context, driverID, h3Index string, la
 		return err
 	}
 	pipe := r.client.Pipeline()
+	// Remove from previous H3 cell so driver appears in only one cell (no ghost entries).
+	prev, _ := r.DriverByID(ctx, driverID)
+	if prev != nil && prev.H3Index != "" && prev.H3Index != h3Index {
+		pipe.SRem(ctx, h3CellPrefix+prev.H3Index, driverID)
+	}
 	pipe.Set(ctx, key, data, driverTTL)
 	if h3Index != "" {
 		cellKey := h3CellPrefix + h3Index

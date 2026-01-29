@@ -7,6 +7,8 @@ import (
 
 	"github.com/zeng/mobility-backend/internal/domain/fireball"
 	"github.com/zeng/mobility-backend/internal/domain/location"
+	"github.com/zeng/mobility-backend/internal/domain/trip"
+	"github.com/zeng/mobility-backend/internal/infrastructure/memory"
 	"github.com/zeng/mobility-backend/internal/infrastructure/postgres"
 	"github.com/zeng/mobility-backend/internal/infrastructure/redis"
 	"github.com/zeng/mobility-backend/internal/transport/grpc"
@@ -61,7 +63,11 @@ func NewContainer(ctx context.Context) (*Container, error) {
 	publisher := redis.NewFireballPublisher(rdb)
 	fireballSvc := fireball.NewService(threshold, locSvc, publisher)
 
-	grpcSrv := grpc.NewServer(grpc.ServerConfig{JWTSecret: cfg.JWT.Secret}, log, locSvc, fireballSvc, publisher)
+	// Trip: in-memory repo for dev; replace with postgres for production
+	tripRepo := memory.NewTripRepo()
+	tripSvc := trip.NewService(tripRepo)
+
+	grpcSrv := grpc.NewServer(grpc.ServerConfig{JWTSecret: cfg.JWT.Secret}, log, locSvc, fireballSvc, publisher, tripSvc)
 
 	return &Container{
 		cfg:      cfg,

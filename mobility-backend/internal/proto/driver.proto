@@ -4,9 +4,11 @@ package mobility.v1;
 
 option go_package = "github.com/zeng/mobility-backend/internal/proto/gen;gen";
 
-// Driver service: nearby drivers (H3-based), driver state.
+// Driver service: nearby drivers (H3-based), driver availability (push-based).
 service DriverService {
   rpc GetNearbyDrivers(GetNearbyDriversRequest) returns (GetNearbyDriversResponse);
+  // Rider/app subscribes to availability updates for a region (e.g. after opening map).
+  rpc StreamDriverAvailability(StreamDriverAvailabilityRequest) returns (stream DriverAvailabilityUpdate);
 }
 
 message GetNearbyDriversRequest {
@@ -25,4 +27,15 @@ message DriverSummary {
 
 message GetNearbyDriversResponse {
   repeated DriverSummary drivers = 1;
+}
+
+message StreamDriverAvailabilityRequest {
+  double lat = 1;
+  double lng = 2;
+  int32 k_ring = 3;  // 0 = use server default
+}
+
+message DriverAvailabilityUpdate {
+  repeated DriverSummary drivers = 1;  // snapshot of drivers in K-ring at this moment
+  int64 updated_at_ms = 2;
 }

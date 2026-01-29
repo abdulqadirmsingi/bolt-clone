@@ -6,6 +6,7 @@ import (
 
 	"github.com/zeng/mobility-backend/internal/domain/fireball"
 	"github.com/zeng/mobility-backend/internal/domain/location"
+	"github.com/zeng/mobility-backend/internal/domain/trip"
 	"github.com/zeng/mobility-backend/internal/proto/gen"
 	"github.com/zeng/mobility-backend/internal/transport/grpc/handlers"
 	"github.com/zeng/mobility-backend/internal/transport/grpc/interceptors"
@@ -25,7 +26,14 @@ type Server struct {
 	log *zap.Logger
 }
 
-func NewServer(cfg ServerConfig, log *zap.Logger, locSvc *location.Service, fireballSvc *fireball.Service, pub fireball.LocationPublisher) *Server {
+func NewServer(
+	cfg ServerConfig,
+	log *zap.Logger,
+	locSvc *location.Service,
+	fireballSvc *fireball.Service,
+	pub fireball.LocationPublisher,
+	tripSvc *trip.Service,
+) *Server {
 	srv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			interceptors.AuthUnaryInterceptor(cfg.JWTSecret),
@@ -39,6 +47,8 @@ func NewServer(cfg ServerConfig, log *zap.Logger, locSvc *location.Service, fire
 	)
 	locHandler := handlers.NewLocationHandler(locSvc, fireballSvc, pub)
 	gen.RegisterLocationServiceServer(srv, locHandler)
+	gen.RegisterDriverServiceServer(srv, handlers.NewDriverHandler(locSvc))
+	gen.RegisterTripServiceServer(srv, handlers.NewTripHandler(tripSvc))
 	reflection.Register(srv)
 	return &Server{Server: srv, log: log}
 }

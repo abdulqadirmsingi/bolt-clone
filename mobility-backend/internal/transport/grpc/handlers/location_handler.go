@@ -33,11 +33,12 @@ func (h *LocationHandler) StreamDriverLocation(stream gen.LocationService_Stream
 			return err
 		}
 		ctx := stream.Context()
-		if err := h.fireball.OnDriverLocation(ctx, req.DriverId, req.Lat, req.Lng, req.HeadingDegrees); err != nil {
+		pushed, err := h.fireball.OnDriverLocation(ctx, req.DriverId, req.Lat, req.Lng, req.HeadingDegrees)
+		if err != nil {
 			continue
 		}
 		_ = stream.Send(&gen.DriverLocationAck{
-			Accepted:           true,
+			Accepted:           pushed,
 			ServerTimestampMs: time.Now().UnixMilli(),
 		})
 	}

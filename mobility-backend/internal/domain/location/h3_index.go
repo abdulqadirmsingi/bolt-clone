@@ -5,11 +5,21 @@ import (
 )
 
 // H3Index wraps Uber H3 for spatial partitioning.
-// Why hexagons > squares:
-// - No corner bias: distance from center to edge is uniform (squares have 4 corners farther).
-// - 6 neighbors per cell; adjacency is consistent.
-// - K-ring (GridDisk) gives symmetric, predictable neighborhoods (O(K²) cells).
-// - H3 is hierarchical: same index at different resolutions aligns.
+//
+// Why hexagons:
+// - No corner bias: distance from center to edge is uniform; squares have 4 corners
+//   farther than edge midpoints, so radius queries are inconsistent.
+// - 6 neighbors per cell; adjacency is consistent (no diagonal ambiguity).
+// - K-ring (GridDisk) gives symmetric, predictable neighborhoods.
+//
+// How K-ring limits search scope:
+// - K=0: 1 cell (the center). K=1: 7 cells. K=2: 19 cells. K=3: 37 cells.
+// - We only query drivers in those cells (Redis sets keyed by H3 index), so we never
+//   scan the whole world—search scope is bounded by K.
+//
+// Time complexity:
+// - KRingStrings: O(K²) cells returned. DriversInCells: O(K²) set lookups + O(M) driver
+//   fetches where M = total drivers in those cells. So overall O(K² + M) instead of O(all drivers).
 type H3Index struct {
 	resolution int // 0–15; 9 ≈ 0.1 km², 10 ≈ 0.03 km²
 	defaultK   int // K-ring layers for "nearby drivers"

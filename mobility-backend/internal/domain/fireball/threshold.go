@@ -28,10 +28,10 @@ type lastState struct {
 	pushedAt  time.Time
 }
 
-func NewThreshold(minDistM, minHeadingDeg, maxSilenceSec, throttleMs int) *Threshold {
+func NewThreshold(minDistM, minHeadingDeg float64, maxSilenceSec, throttleMs int) *Threshold {
 	t := &Threshold{
-		minDistanceMeters: float64(minDistM),
-		minHeadingDegrees: float64(minHeadingDeg),
+		minDistanceMeters: minDistM,
+		minHeadingDegrees: minHeadingDeg,
 		maxSilenceSeconds: maxSilenceSec,
 		throttleMs:        throttleMs,
 		last:              make(map[string]*lastState),
