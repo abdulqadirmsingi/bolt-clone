@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../features/map/presentation/map_page.dart';
+import 'di.dart';
 import 'theme.dart';
+import '../features/map/presentation/map_page.dart';
 
 class MobilityApp extends StatelessWidget {
   const MobilityApp({super.key});
@@ -32,7 +33,13 @@ class MapPagePlaceholder extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MapPage()),
+                MaterialPageRoute(
+                  builder: (_) => MapPage(
+                    mapController: AppContainer.mapController,
+                    tripId: null,
+                    driverId: null,
+                  ),
+                ),
               ),
               child: const Text('Open map'),
             ),

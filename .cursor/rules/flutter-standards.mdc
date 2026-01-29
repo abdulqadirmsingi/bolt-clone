@@ -1,0 +1,28 @@
+---
+description: Flutter/Dart restrictions, structure and performance
+globs: "**/*.dart"
+alwaysApply: false
+---
+
+# Flutter & Dart Standards
+
+## Banned patterns
+
+- **Map logic inside `build()`** — No map-related logic (camera, markers, polylines, etc.) inside `build()`. Use state, controllers, or dedicated methods called from lifecycle/callbacks, not from `build()`.
+- **Business logic in widgets** — Widgets must only handle UI and delegate to services, repositories, or use cases. No gRPC, parsing, or domain rules in widget files.
+- **gRPC calls inside UI** — All gRPC (or any network) calls must be in data/domain layers (repositories, data sources, use cases), never in widgets or `build()`.
+- **One giant `providers.dart`** — Split providers by feature or domain (e.g. `auth_providers.dart`, `map_providers.dart`). No single file that registers every provider.
+- **Rebuilding GoogleMap every frame** — Do not rebuild the map widget on every frame. Use `const`/`RepaintBoundary`, keys, or move dynamic parts into separate widgets so the map itself is stable and not rebuilt unnecessarily.
+
+## File structure (modular)
+
+- **Feature-first**: `lib/features/<feature>/` with subfolders such as `data/`, `domain/`, `presentation/` (or `ui/`).
+- **Core shared code**: `lib/core/` (e.g. network, location, theme, constants).
+- **Per-feature**: Keep screens, widgets, and state for a feature inside that feature folder; avoid one huge `screens/` or `widgets/` dump.
+- **State**: Prefer feature-scoped providers/bloc files (e.g. `map_providers.dart`, `driver_providers.dart`) instead of a single global providers file.
+
+## Performance
+
+- Keep `build()` methods **cheap**: no heavy computation, no I/O, no creating large objects.
+- Use **const** constructors and widgets where possible to reduce rebuilds.
+- For maps/lists, use **list view builders** or **lazy loading**; avoid building hundreds of widgets at once.

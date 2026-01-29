@@ -1,0 +1,23 @@
+---
+description: Project-wide restrictions, documentation policy, modularity and performance
+alwaysApply: true
+---
+
+# Project Standards
+
+## Documentation
+
+- **Do not create `.md` / Markdown files** (README, docs, RULE.md, etc.) unless the user explicitly asks for them.
+
+## Modularity (required)
+
+- Prefer **small, focused files**. Split by feature, layer, or responsibility.
+- Avoid large single files; extract to modules, helpers, or separate files when it improves clarity.
+- Use a **consistent, layered file structure** (e.g. feature folders, core vs features, data/presentation/domain).
+- Keep **one main concern per file**; if a file grows beyond ~200–300 lines, consider splitting.
+
+## Code quality
+
+- Prefer **clear naming**, **single responsibility**, and **explicit dependencies**.
+- Avoid **premature abstraction**; extract when duplication or complexity justifies it.
+- Design so that **structure and patterns do not slow down the app or system**; avoid unnecessary work per frame or per request.

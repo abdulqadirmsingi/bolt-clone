@@ -1,20 +1,20 @@
-/// Data source: gRPC stream for driver location (push-based).
+/// Raw data source: gRPC stream for driver location (push-based).
 ///
-/// Subscribes to a driver's location via SubscribeDriverLocation;
-/// emits DriverLocationUpdate events. UI never polls.
+/// Emits raw GPS updates; smoothing is applied in DriverRepositoryImpl
+/// via core/location, not here. UI never sees raw stream directly.
 abstract class DriverStreamDataSource {
-  /// Start streaming driver location; stream is push-based (at least once).
-  Stream<DriverLocationUpdate> subscribeDriverLocation(String tripId, String driverId);
+  Stream<RawDriverLocationUpdate> subscribeDriverLocation(String tripId, String driverId);
 }
 
-class DriverLocationUpdate {
+/// Raw update from backend (before smoothing).
+class RawDriverLocationUpdate {
   final String driverId;
   final double lat;
   final double lng;
   final double headingDegrees;
   final int updatedAtMs;
 
-  DriverLocationUpdate({
+  const RawDriverLocationUpdate({
     required this.driverId,
     required this.lat,
     required this.lng,

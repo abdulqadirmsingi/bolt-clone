@@ -1,0 +1,26 @@
+---
+description: Go backend structure, modularity and performance
+globs: "**/*.go"
+alwaysApply: false
+---
+# Go Backend Standards
+
+## Modularity
+
+- **Package by feature or layer**, not one giant package. Prefer: `internal/domain/`, `internal/app/`, `internal/transport/`, `internal/infrastructure/`.
+- **Small, focused files**: one main type or a small group of related functions per file. Split when a file grows beyond ~200–300 lines or multiple responsibilities.
+- **Explicit dependencies**: inject dependencies (repos, clients, config) via constructors or options; avoid global state and hidden coupling.
+- **Clear boundaries**: transport (HTTP/gRPC) → app/use cases → domain; infrastructure (DB, external APIs) only in infrastructure packages.
+
+## Structure
+
+- **`internal/`** for private app code; **`pkg/`** only for truly reusable, stable libraries if needed.
+- **Transport**: handlers/controllers in `internal/transport/` (e.g. `grpc/`, `http/`). Keep handlers thin; delegate to app/domain.
+- **Business logic**: in `internal/app/` or `internal/domain/`; no business logic inside transport or infrastructure.
+- **No “god” files**: avoid single files that contain many unrelated types or the entire “wire-up”; split by concern.
+
+## Performance
+
+- Do not do **heavy work per request** in hot paths; use caching, connection pooling, and async where appropriate.
+- Keep **handlers fast**: validate input, call app layer, return; no long-running or blocking work in the handler.
+- **Database**: use connection pools, avoid N+1 queries; keep queries and transactions scoped and efficient.

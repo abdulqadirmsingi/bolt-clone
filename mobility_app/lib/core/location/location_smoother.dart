@@ -48,4 +48,12 @@ class LocationSmoother {
     _lastGpsTime = DateTime.now();
     _deadReckoning.update(lat, lng, 0, 0);
   }
+
+  /// Whether at least one sample has been pushed (for periodic emission).
+  bool get hasReceivedSample => _lastGpsTime != null;
+
+  /// Whether current position is from dead reckoning (GPS stale).
+  bool get isCurrentPredicted =>
+      _lastGpsTime != null &&
+      DateTime.now().difference(_lastGpsTime!).inMilliseconds >= _maxStaleMs;
 }
